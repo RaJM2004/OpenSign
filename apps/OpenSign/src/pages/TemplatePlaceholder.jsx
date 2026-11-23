@@ -1004,6 +1004,7 @@ const TemplatePlaceholder = () => {
           NextReminderDate: pdfDetails[0]?.NextReminderDate,
           IsEnableOTP: pdfDetails[0]?.IsEnableOTP === true ? true : false,
           AllowModifications: pdfDetails[0]?.AllowModifications || false,
+          IsGxP: pdfDetails[0]?.IsGxP === true ? true : false,
           IsTourEnabled: pdfDetails[0]?.IsTourEnabled === true ? true : false,
           URL: pdfUrl,
           SignatureType: signatureType,
@@ -1415,7 +1416,8 @@ const TemplatePlaceholder = () => {
         ...Bcc,
         ...Cc,
         ...RedirectUrl,
-        AllowModifications: updateTemplate?.[0]?.AllowModifications || false
+        AllowModifications: updateTemplate?.[0]?.AllowModifications || false,
+        IsGxP: updateTemplate?.[0]?.IsGxP === true ? true : false
       };
       const updateTemplateObj = new Parse.Object("contracts_Template");
       updateTemplateObj.id = templateId;

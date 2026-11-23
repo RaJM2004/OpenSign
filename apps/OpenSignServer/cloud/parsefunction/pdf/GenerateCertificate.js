@@ -95,6 +95,8 @@ export default async function GenerateCertificate(docDetails) {
             SignedOn: x?.SignedOn || generatedUTCTime,
             ViewedOn: x?.ViewedOn || x?.SignedOn || generatedUTCTime,
             Signature: x?.Signature || '',
+            Reason: x?.Reason || '',
+            AuthMethod: x?.AuthMethod || '',
             _signedOnTs: toTs(x?.SignedOn),
           };
         })
@@ -105,6 +107,8 @@ export default async function GenerateCertificate(docDetails) {
             SignedOn: filteredaudit[0]?.SignedOn || generatedUTCTime,
             ViewedOn: filteredaudit[0]?.ViewedOn || filteredaudit[0]?.SignedOn || generatedUTCTime,
             Signature: filteredaudit[0]?.Signature || '',
+            Reason: filteredaudit[0]?.Reason || '',
+            AuthMethod: filteredaudit[0]?.AuthMethod || '',
             _signedOnTs: toTs(filteredaudit[0]?.SignedOn),
           },
         ];
@@ -284,6 +288,23 @@ export default async function GenerateCertificate(docDetails) {
     font: timesRomanFont,
     color: textValueColor,
   });
+
+  if (docDetails?.IsGxP) {
+    page.drawText('Compliance :', {
+      x: half,
+      y: signersY,
+      size: text,
+      font: timesRomanFont,
+      color: textKeyColor,
+    });
+    page.drawText('FDA 21 CFR Part 11 (GxP)', {
+      x: half + 75,
+      y: signersY,
+      size: text,
+      font: timesRomanFont,
+      color: titleColor,
+    });
+  }
   page.drawText('Document originator', {
     x: 30,
     y: originatorHeaderY,
@@ -424,6 +445,23 @@ export default async function GenerateCertificate(docDetails) {
       currentPage.drawText('Email, OTP Auth', {
         x: half + 190,
         y: yPosition2,
+        size: timeText,
+        font: timesRomanFont,
+        color: textValueColor,
+      });
+    }
+
+    if (x?.Reason) {
+      currentPage.drawText('Reason :', {
+        x: half + 70,
+        y: yPosition3,
+        size: timeText,
+        font: timesRomanFont,
+        color: textKeyColor,
+      });
+      currentPage.drawText(x.Reason, {
+        x: half + 120,
+        y: yPosition3,
         size: timeText,
         font: timesRomanFont,
         color: textValueColor,

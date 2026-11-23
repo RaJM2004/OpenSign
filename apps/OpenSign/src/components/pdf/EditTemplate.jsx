@@ -55,6 +55,7 @@ const EditTemplate = ({
     RedirectUrl: template?.RedirectUrl || "",
     AllowModifications: template?.AllowModifications || false,
     TimeToCompleteDays: template?.TimeToCompleteDays || 15,
+    IsGxP: template?.IsGxP ? `${template?.IsGxP}` : "false",
   });
   const pensList = ["blue", "red", "black"];
   const [selectedColors, setSelectedColors] = useState(
@@ -219,6 +220,7 @@ const EditTemplate = ({
       IsEnableOTP: IsEnableOTP,
       IsTourEnabled: isTourEnabled,
       AllowModifications: allowModify,
+      IsGxP: formData?.IsGxP === "true",
       PenColors: selectedColors,
       ...reminderDate
     };
@@ -602,6 +604,52 @@ const EditTemplate = ({
                 isCaptureAllData
                 isAddYourSelfCheckbox={isAddYourSelfCheckbox}
               />
+            </div>
+            <div className="text-xs mt-3 p-2 rounded-md border border-base-300 bg-base-200/50">
+              <label className="block font-semibold mb-1">
+                <span>Compliance Mode (Signature Standard)</span>
+                <a data-tooltip-id="compliance-tooltip" className="ml-1 cursor-pointer">
+                  <sup>
+                    <i className="fa-light fa-question rounded-full border-[#33bbff] text-[#33bbff] text-[13px] border-[1px] py-[1.5px] px-[4px]"></i>
+                  </sup>
+                </a>
+                <Tooltip id="compliance-tooltip" className="z-50">
+                  <div className="max-w-[280px] md:max-w-[400px]">
+                    <p className="font-bold">GxP (FDA 21 CFR Part 11):</p>
+                    <p>Requires signing reasons, signer re-authentication, and automatically appends the complete Audit Trail report directly to the signed document upon completion.</p>
+                  </div>
+                </Tooltip>
+              </label>
+              <div className="flex flex-col md:flex-row md:gap-4 mt-1">
+                <div className="flex items-center gap-2 ml-2 mb-1">
+                  <input
+                    type="radio"
+                    value={"false"}
+                    name="IsGxP"
+                    className="op-radio op-radio-xs"
+                    checked={formData.IsGxP === "false"}
+                    onChange={handleStrInput}
+                  />
+                  <div className="text-center font-medium">Non-GxP (Standard)</div>
+                </div>
+                <div className="flex items-center gap-2 ml-2 mb-1">
+                  <input
+                    type="radio"
+                    value={"true"}
+                    name="IsGxP"
+                    className="op-radio op-radio-xs"
+                    checked={formData.IsGxP === "true"}
+                    onChange={handleStrInput}
+                  />
+                  <div className="text-center font-medium text-primary">GxP (FDA 21 CFR Part 11)</div>
+                </div>
+              </div>
+              {formData.IsGxP === "true" && (
+                <div className="text-[11px] text-info mt-1 ml-2">
+                  <i className="fa-solid fa-circle-check mr-1"></i>
+                  Audit Trail Report will be attached directly to the final signed PDF.
+                </div>
+              )}
             </div>
             <div className="text-xs mt-2">
               <label className="block">{t("redirect-url")}</label>

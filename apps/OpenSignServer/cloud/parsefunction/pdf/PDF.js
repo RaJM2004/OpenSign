@@ -93,11 +93,13 @@ async function updateDoc(
   className,
   sign,
   documentHash,
-  activity
+  activity,
+  signingReason,
+  authMethod
 ) {
   try {
     const UserPtr = { __type: 'Pointer', className: className, objectId: userId };
-    const auditActivity = 'Signed';
+    const auditActivity = activity || 'Signed';
     const obj = {
       UserPtr: UserPtr,
       SignedUrl: url,
@@ -105,6 +107,8 @@ async function updateDoc(
       ipAddress: ipAddress,
       SignedOn: new Date(),
       Signature: sign,
+      ...(signingReason ? { Reason: signingReason } : {}),
+      ...(authMethod ? { AuthMethod: authMethod } : {}),
     };
     let updateAuditTrail;
     if (data.AuditTrail && data.AuditTrail.length > 0) {
@@ -359,7 +363,7 @@ async function sendMailsaveCertifcate(doc, pfx, isCustomMail, mailProvider, file
  * @param {string} [options.Signature] - Signature (for audit trail)
  * @returns {Promise<Buffer>} merged PDF Buffer
  */
-async function processPdf(_resDoc, PdfBuffer, reason) {
+async function processPdf(_resDoc, PdfBuffer, reason, UserPtr, userIP, sign, updateAuditTrail) {
   // No CC merge; operate directly on the original PDF
   const pdfDoc = await PDFDocument.load(PdfBuffer);
   const form = pdfDoc.getForm();
@@ -367,6 +371,32 @@ async function processPdf(_resDoc, PdfBuffer, reason) {
   form.updateFieldAppearances();
   // Flattens the form, converting all form fields into non-editable, static content
   form.flatten();
+
+  // If GxP mode is enabled, attach the Audit Trail Certificate directly to the PDF
+  if (_resDoc?.IsGxP) {
+    try {
+      console.log('Attaching Audit Trail Certificate to GxP document...');
+      const docForCert = {
+        ..._resDoc,
+        AuditTrail: updateAuditTrail || _resDoc.AuditTrail,
+        completedAt: new Date(),
+      };
+      const certBytes = await GenerateCertificate(docForCert);
+      if (certBytes) {
+        const certPdfDoc = await PDFDocument.load(certBytes);
+        const copiedPages = await pdfDoc.copyPages(certPdfDoc, certPdfDoc.getPageIndices());
+        for (const page of copiedPages) {
+          pdfDoc.addPage(page);
+        }
+        console.log(
+          `✅ GxP Mode: ${copiedPages.length} Audit Trail page(s) attached directly to the document.`
+        );
+      }
+    } catch (certErr) {
+      console.error('Error attaching audit trail report in GxP mode:', certErr);
+    }
+  }
+
   Placeholder({
     pdfDoc: pdfDoc,
     reason: `Digitally signed by ${eSignName} for ${reason}`,
@@ -394,6 +424,8 @@ async function PDF(req) {
     const isCustomMail = req.params.isCustomCompletionMail || false;
     const mailProvider = req.params.mailProvider || '';
     const sign = req.params.signature || '';
+    const signingReason = req.params.signingReason || req.params.reason || '';
+    const authMethod = req.params.authMethod || (req.params.signingReason ? 'GxP Attested' : '');
     const auditActivity = 'Signed';
     let publicUrl = req.headers.public_url;
     // below bode is used to get info of docId
@@ -465,7 +497,14 @@ async function PDF(req) {
       const P12Buffer = Buffer.from(pfxFile, 'base64');
       fs.writeFileSync(pfxname, P12Buffer);
       const UserPtr = { __type: 'Pointer', className: className, objectId: signUser.objectId };
-      const obj = { UserPtr: UserPtr, SignedUrl: '', Activity: auditActivity, ipAddress: userIP };
+      const obj = {
+        UserPtr: UserPtr,
+        SignedUrl: '',
+        Activity: auditActivity,
+        ipAddress: userIP,
+        ...(signingReason ? { Reason: signingReason } : {}),
+        ...(authMethod ? { AuthMethod: authMethod } : {}),
+      };
       let updateAuditTrail;
       if (_resDoc.AuditTrail && _resDoc.AuditTrail.length > 0) {
         updateAuditTrail = [..._resDoc.AuditTrail, obj];
@@ -505,7 +544,15 @@ async function PDF(req) {
             : username + ' <' + userEmail + '>';
         const p12Cert = new P12Signer(P12Buffer, { passphrase: passphrase || null });
         signedFilePath = `./exports/signed_${name}`;
-        PdfBuffer = await processPdf(_resDoc, PdfBuffer, reason, UserPtr, userIP, sign);
+        PdfBuffer = await processPdf(
+          _resDoc,
+          PdfBuffer,
+          reason,
+          UserPtr,
+          userIP,
+          sign,
+          updateAuditTrail
+        );
         //`new signPDF` create new instance of pdfBuffer and p12Buffer
         const OBJ = new SignPdf();
         // `signedDocs` is used to signpdf digitally
@@ -537,7 +584,9 @@ async function PDF(req) {
           className, // className based on flow
           sign, // sign base64
           isCompleted ? documentHash : undefined,
-          auditActivity
+          auditActivity,
+          signingReason,
+          authMethod
         );
         sendNotifyMail(_resDoc, signUser, mailProvider, publicUrl);
         saveFileUsage(pdfSize, data.imageUrl, _resDoc?.CreatedBy?.objectId);

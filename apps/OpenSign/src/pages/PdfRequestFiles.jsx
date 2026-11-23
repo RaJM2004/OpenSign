@@ -164,6 +164,11 @@ function PdfRequestFiles(
     body: "",
     subject: ""
   });
+  const [isGxPModal, setIsGxPModal] = useState(false);
+  const [gxpReason, setGxpReason] = useState("I approve this document");
+  const [gxpPassword, setGxpPassword] = useState("");
+  const [gxpAttested, setGxpAttested] = useState(false);
+  const [gxpError, setGxpError] = useState("");
   const isMobile = window.innerWidth < 767;
   let isGuestSignFlow = false;
   let sendmail;
@@ -649,8 +654,7 @@ function PdfRequestFiles(
   };
 
   //function for embed signature or image url in pdf
-  async function embedWidgetsData(
-  ) {
+  async function embedWidgetsData(signingReason = "", authMethod = "") {
     let contactId =
       signerObjectId;
     let docId =
@@ -787,7 +791,9 @@ function PdfRequestFiles(
                   contactId,
                   objectId,
                   widgets,
-                      "Signed"
+                  "Signed",
+                  signingReason,
+                  authMethod
                 );
                 if (resSign && resSign.status === "success") {
                   dispatch(setTypedSignFont("Fasthand"));
@@ -1031,8 +1037,24 @@ function PdfRequestFiles(
     }
   };
   const handleSignPdf = async () => {
+    const isGxPDoc = pdfDetails?.[0]?.IsGxP === true;
+    if (isGxPDoc) {
+      setIsGxPModal(true);
+      return;
+    }
     setIsUiLoading(true);
-      await embedWidgetsData();
+    await embedWidgetsData();
+  };
+
+  const handleGxPSubmit = async (e) => {
+    e?.preventDefault?.();
+    if (!gxpAttested) {
+      setGxpError("Please check the 21 CFR Part 11 attestation box to confirm your electronic signature.");
+      return;
+    }
+    setIsGxPModal(false);
+    setIsUiLoading(true);
+    await embedWidgetsData(gxpReason, gxpPassword ? "Password Authenticated (GxP)" : "Attested (FDA 21 CFR Part 11)");
   };
 
   //function for save x and y position and show signature  tab on that position
@@ -2337,6 +2359,89 @@ function PdfRequestFiles(
               </button>
             </div>
           </ModalUi>
+          {isGxPModal && (
+            <ModalUi
+              isOpen={isGxPModal}
+              title="GxP Electronic Signature Verification (21 CFR Part 11)"
+              handleClose={() => setIsGxPModal(false)}
+            >
+              <form onSubmit={handleGxPSubmit} className="p-4 flex flex-col gap-4 text-xs">
+                <div className="bg-primary/10 border border-primary/20 rounded p-3 text-primary text-xs">
+                  <i className="fa-solid fa-shield-check mr-2"></i>
+                  <strong>Regulated GxP Document:</strong> This document requires a declared signing reason and legal attestation under FDA 21 CFR Part 11.
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="font-semibold text-xs text-base-content">
+                    Purpose / Reason for Signing <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    className="op-select op-select-bordered op-select-sm w-full text-xs"
+                    value={gxpReason}
+                    onChange={(e) => setGxpReason(e.target.value)}
+                    required
+                  >
+                    <option value="I approve this document">I approve this document (Approval)</option>
+                    <option value="I am the author of this document">I am the author of this document (Authorship)</option>
+                    <option value="I have reviewed and verified this document">I have reviewed and verified this document (Review)</option>
+                    <option value="I executed the described procedures">I executed the described procedures (Execution)</option>
+                    <option value="I acknowledge and accept the contents">I acknowledge and accept the contents (Acknowledgment)</option>
+                  </select>
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="font-semibold text-xs text-base-content">
+                    Signer Authentication Password
+                  </label>
+                  <input
+                    type="password"
+                    className="op-input op-input-bordered op-input-sm w-full text-xs"
+                    placeholder="Enter password or leave blank for guest attestation"
+                    value={gxpPassword}
+                    onChange={(e) => setGxpPassword(e.target.value)}
+                  />
+                </div>
+
+                <div className="flex items-start gap-2 bg-base-200 p-3 rounded border border-base-300">
+                  <input
+                    type="checkbox"
+                    id="gxp-attest-check"
+                    className="op-checkbox op-checkbox-sm mt-0.5"
+                    checked={gxpAttested}
+                    onChange={(e) => {
+                      setGxpAttested(e.target.checked);
+                      setGxpError("");
+                    }}
+                  />
+                  <label htmlFor="gxp-attest-check" className="cursor-pointer text-[11px] leading-relaxed">
+                    <strong>21 CFR Part 11 Attestation:</strong> I confirm that by submitting this electronic signature, it is the legally binding equivalent of my traditional handwritten signature.
+                  </label>
+                </div>
+
+                {gxpError && (
+                  <div className="text-red-500 text-xs font-semibold">
+                    <i className="fa-solid fa-triangle-exclamation mr-1"></i> {gxpError}
+                  </div>
+                )}
+
+                <div className="flex justify-end gap-2 mt-2">
+                  <button
+                    type="button"
+                    className="op-btn op-btn-ghost op-btn-sm"
+                    onClick={() => setIsGxPModal(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="op-btn op-btn-primary op-btn-sm px-5"
+                  >
+                    Authorize & Sign
+                  </button>
+                </div>
+              </form>
+            </ModalUi>
+          )}
           <TextFontSetting
             isTextSetting={isTextSetting}
             setIsTextSetting={setIsTextSetting}

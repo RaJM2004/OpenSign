@@ -1883,7 +1883,8 @@ function PlaceHolderSign() {
         ...RedirectUrl,
         QualifiedSignatureConfig:
           updateDocument?.[0]?.QualifiedSignatureConfig || [],
-        AllowModifications: updateDocument?.[0]?.AllowModifications || false
+        AllowModifications: updateDocument?.[0]?.AllowModifications || false,
+        IsGxP: updateDocument?.[0]?.IsGxP === true ? true : false
       };
       const updateTemplateObj = new Parse.Object("contracts_Document");
       updateTemplateObj.id = pdfDetails?.[0]?.objectId;

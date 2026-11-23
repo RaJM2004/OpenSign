@@ -673,6 +673,7 @@ const DocumentsReport = (props) => {
       subject: mail.subject,
       from:
         doc?.SenderName ||
+        doc?.ExtUserPtr?.Name ||
         doc?.ExtUserPtr?.Email,
       html: emailEditorType === "basic" ? mail.body.basic : mail.body.advanced
     };

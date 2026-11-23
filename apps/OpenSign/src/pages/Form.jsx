@@ -74,6 +74,7 @@ const Forms = (props) => {
     autoreminder: false,
     IsEnableOTP: "false",
     IsTourEnabled: "false",
+    IsGxP: "false",
     NotifyOnSignatures: "",
     Bcc: [],
     Cc: [],
@@ -455,6 +456,7 @@ const Forms = (props) => {
             object.set("RedirectUrl", formData.RedirectUrl);
           }
         }
+        object.set("IsGxP", formData.IsGxP === "true");
         object.set("URL", fileupload);
         object.set("CreatedBy", Parse.User.createWithoutData(currentUser.id));
         if (folder && folder.ObjectId) {
@@ -631,6 +633,7 @@ const Forms = (props) => {
       autoreminder: false,
       IsEnableOTP: "false",
       IsTourEnabled: istourenabled,
+      IsGxP: "false",
       NotifyOnSignatures: notifySign,
       RedirectUrl: "",
       AllowModifications: false,
@@ -937,20 +940,145 @@ const Forms = (props) => {
               />
             </div>
             {props.title === "Sign Yourself" ? (
-              <SelectFolder
-                onSuccess={handleFolder}
-                folderCls={props.Cls}
-                isReset={isReset}
-              />
+              <>
+                <SelectFolder
+                  onSuccess={handleFolder}
+                  folderCls={props.Cls}
+                  isReset={isReset}
+                />
+                <div className="text-xs mt-4 p-3 rounded-lg border border-base-300 bg-base-200/40">
+                  <label className="block font-semibold mb-1.5 text-base-content">
+                    <span>Compliance Mode</span>
+                    <span
+                      className={`ml-2 text-[10px] px-2 py-0.5 rounded font-bold ${
+                        formData.IsGxP === "true"
+                          ? "bg-purple-100 text-purple-700 border border-purple-300"
+                          : "bg-gray-100 text-gray-700 border border-gray-300"
+                      }`}
+                    >
+                      {formData.IsGxP === "true"
+                        ? "FDA 21 CFR Part 11 (GxP)"
+                        : "Standard (Non-GxP)"}
+                    </span>
+                  </label>
+                  <div className="flex flex-col sm:flex-row gap-4 mt-2">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="IsGxP"
+                        value="false"
+                        className="op-radio op-radio-xs op-radio-primary"
+                        checked={formData.IsGxP !== "true"}
+                        onChange={handleStrInput}
+                      />
+                      <span className="text-xs">Non-GxP (Standard e-Sign)</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="IsGxP"
+                        value="true"
+                        className="op-radio op-radio-xs op-radio-primary"
+                        checked={formData.IsGxP === "true"}
+                        onChange={handleStrInput}
+                      />
+                      <span className="text-xs font-semibold text-purple-700">
+                        GxP (FDA 21 CFR Part 11)
+                      </span>
+                    </label>
+                  </div>
+                  {formData.IsGxP === "true" && (
+                    <div className="mt-2 text-[11px] text-purple-800 bg-purple-50 p-2 rounded border border-purple-200 flex items-center gap-1.5">
+                      <i className="fa-light fa-shield-check text-purple-600 text-sm"></i>
+                      <span>
+                        Audit Trail Report / Certificate will be attached directly to the end of the final signed PDF.
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </>
             ) : (
               <div className="flex flex-col md:flex-row w-full mt-4 md:mt-10 gap-3">
                 <div className="card bg-base-100 rounded-box flex-grow-0 w-full p-3">
                   {props.title !== "New Template" ? (
-                    <SelectFolder
-                      onSuccess={handleFolder}
-                      folderCls={props.Cls}
-                      isReset={isReset}
-                    />
+                    <>
+                      <SelectFolder
+                        onSuccess={handleFolder}
+                        folderCls={props.Cls}
+                        isReset={isReset}
+                      />
+                      <div className="text-xs mt-4 p-3 rounded-lg border border-base-300 bg-base-200/40">
+                        <label className="block font-semibold mb-1.5 text-base-content">
+                          <span>Compliance Mode</span>
+                          <span
+                            className={`ml-2 text-[10px] px-2 py-0.5 rounded font-bold ${
+                              formData.IsGxP === "true"
+                                ? "bg-purple-100 text-purple-700 border border-purple-300"
+                                : "bg-gray-100 text-gray-700 border border-gray-300"
+                            }`}
+                          >
+                            {formData.IsGxP === "true"
+                              ? "FDA 21 CFR Part 11 (GxP)"
+                              : "Standard (Non-GxP)"}
+                          </span>
+                          <a
+                            data-tooltip-id="compliance-form-tooltip"
+                            className="ml-1 cursor-pointer"
+                          >
+                            <sup>
+                              <i className="fa-light fa-question rounded-full border-[#33bbff] text-[#33bbff] text-[13px] border-[1px] py-[1.5px] px-[4px]"></i>
+                            </sup>
+                          </a>
+                          <Tooltip
+                            id="compliance-form-tooltip"
+                            className="z-50"
+                          >
+                            <div className="max-w-[280px] md:max-w-[400px]">
+                              <p className="font-bold">GxP (FDA 21 CFR Part 11):</p>
+                              <p>
+                                Enforces signing purpose/reasons, re-authentication,
+                                and automatically attaches the complete Audit Trail
+                                report directly to the end of the signed document.
+                              </p>
+                            </div>
+                          </Tooltip>
+                        </label>
+                        <div className="flex flex-col sm:flex-row gap-4 mt-2">
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="radio"
+                              name="IsGxP"
+                              value="false"
+                              className="op-radio op-radio-xs op-radio-primary"
+                              checked={formData.IsGxP !== "true"}
+                              onChange={handleStrInput}
+                            />
+                            <span className="text-xs">Non-GxP (Standard e-Sign)</span>
+                          </label>
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="radio"
+                              name="IsGxP"
+                              value="true"
+                              className="op-radio op-radio-xs op-radio-primary"
+                              checked={formData.IsGxP === "true"}
+                              onChange={handleStrInput}
+                            />
+                            <span className="text-xs font-semibold text-purple-700">
+                              GxP (FDA 21 CFR Part 11)
+                            </span>
+                          </label>
+                        </div>
+                        {formData.IsGxP === "true" && (
+                          <div className="mt-2 text-[11px] text-purple-800 bg-purple-50 p-2 rounded border border-purple-200 flex items-center gap-1.5">
+                            <i className="fa-light fa-shield-check text-purple-600 text-sm"></i>
+                            <span>
+                              Audit Trail Report / Certificate will be attached directly to the end of the final signed PDF.
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </>
                   ) : (
                     <>
                       <span className=" mb-2 font-[400]">

@@ -81,8 +81,15 @@ if (smtpenable) {
       };
     }
     transporterMail = createTransport(transporterConfig);
-    await transporterMail.verify();
     isMailAdapter = true;
+    transporterMail
+      .verify()
+      .then(() => {
+        console.log('SMTP connection verified successfully.');
+      })
+      .catch(err => {
+        console.log(`SMTP verify warning: ${err}`);
+      });
   } catch (err) {
     isMailAdapter = false;
     console.log(`Please provide valid SMTP credentials: ${err}`);
@@ -256,12 +263,13 @@ if (!process.env.TESTING) {
   }
   httpServer.listen(port, '0.0.0.0', function () {
     console.log('opensign-server running on port ' + port + '.');
-    const isWindows = process.platform === 'win32';
-    // console.log('isWindows', isWindows);
-    const migrate = isWindows
-      ? `set APPLICATION_ID=${serverAppId}&& set SERVER_URL=${cloudServerUrl}&& set MASTER_KEY=${process.env.MASTER_KEY}&& npx parse-dbtool migrate`
-      : `APPLICATION_ID=${serverAppId} SERVER_URL=${cloudServerUrl} MASTER_KEY=${process.env.MASTER_KEY} npx parse-dbtool migrate`;
-    exec(migrate, (error, stdout, stderr) => {
+    const migrateEnv = {
+      ...process.env,
+      APPLICATION_ID: serverAppId,
+      SERVER_URL: cloudServerUrl,
+      MASTER_KEY: process.env.MASTER_KEY,
+    };
+    exec('npx parse-dbtool migrate', { env: migrateEnv }, (error, stdout, stderr) => {
       if (error) {
         console.error(`Error: ${error.message}`);
         return;

@@ -929,7 +929,9 @@ export const signPdfFun = async (
   signerObjectId,
   objectId,
   widgets,
-  activity
+  activity,
+  signingReason,
+  authMethod
 ) => {
   let isCustomCompletionMail = false;
   try {
@@ -985,7 +987,9 @@ export const signPdfFun = async (
       userId: signerObjectId,
       isCustomCompletionMail: isCustomCompletionMail,
       signature: suffixbase64, //qes: will be empty string for QES
-      activity: activity || "Signed"
+      activity: activity || "Signed",
+      signingReason: signingReason || "",
+      authMethod: authMethod || ""
     };
     const resSignPdf = await Parse.Cloud.run("signPdf", params);
     if (resSignPdf) {

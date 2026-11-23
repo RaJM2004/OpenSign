@@ -40,11 +40,17 @@ async function sendMailProvider(req) {
       }
     }
 
-    const from = req.params.from || '';
+    let from = req.params.from || '';
+    if (from.includes('@')) {
+      from = from.split('@')[0];
+    }
+    if (!from.trim()) {
+      from = 'OpenSign';
+    }
     const mailsender = smtpenable ? process.env.SMTP_USER_EMAIL : process.env.MAILGUN_SENDER;
     const replyto = req.params?.replyto || '';
     const messageParams = {
-      from: from + ' <' + mailsender + '>',
+      from: `"${from}" <${mailsender}>`,
       to: req.params.recipient,
       subject: normalizeMailSubject(req.params.subject),
       text: req.params.text || 'mail',
@@ -54,6 +60,17 @@ async function sendMailProvider(req) {
       replyTo: replyto ? replyto : undefined,
     };
 
+    console.log(
+      'sendMailv3 messageParams:',
+      JSON.stringify({
+        from: messageParams.from,
+        to: messageParams.to,
+        subject: messageParams.subject,
+        replyTo: messageParams.replyTo,
+        htmlLength: messageParams.html?.length,
+        htmlPreview: messageParams.html?.substring(0, 200),
+      })
+    );
     if (transporterSMTP) {
       const res = await transporterSMTP.sendMail(messageParams);
       console.log('smtp transporter res: ', res?.response);

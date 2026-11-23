@@ -33,11 +33,12 @@
 
 1. [Introduction](#introduction)
 2. [Features](#features)
-3. [Installation](#installation)
-4. [Usage](#usage)
-5. [Contribution Guidelines](#contribution-guidelines)
-6. [License](#license)
-7. [Acknowledgments](#acknowledgments)
+3. [Running Locally](#running-locally)
+4. [Deploy](#deploy)
+5. [Usage](#usage)
+6. [Contribution Guidelines](#contribution-guidelines)
+7. [License](#license)
+8. [Acknowledgments](#acknowledgments)
 
 ---
 Please star ⭐ the repo to support us! 😀
@@ -217,6 +218,51 @@ Welcome to OpenSign, the premier open source docusign alternative - document e-s
     </tr>
   </tbody>
 </table>
+
+---
+
+### Running Locally
+
+To run OpenSign locally on your machine with separate frontend and backend instances:
+
+#### 1. Start MongoDB (Database)
+Ensure Docker Desktop is running, then start the persistent MongoDB container:
+```powershell
+# If running for the first time:
+docker run -d --name opensign-mongo -p 27017:27017 mongo:latest
+
+# If the container already exists:
+docker start opensign-mongo
+```
+
+#### 2. Start the Backend Server (OpenSignServer)
+Open a terminal and run:
+```powershell
+cd apps\OpenSignServer
+node index.js
+```
+- **Backend API:** `http://127.0.0.1:8088/app`
+- **Health Check:** `http://127.0.0.1:8088/` (returns `opensign-server is running !!!`)
+- *Note:* Configured on port `8088` in `.env` to avoid conflicts with other local services using port `8080`.
+
+#### 3. Start the Frontend (OpenSign Client)
+Open a second terminal and run:
+```powershell
+cd apps\OpenSign
+npm run dev
+```
+- **Frontend URL:** `http://localhost:3000`
+- On first launch with a clean database, OpenSign will automatically route you to `http://localhost:3000/addadmin` to create your initial Administrator account.
+
+---
+
+#### Alternative: Standalone Mock Mode (No Database / Backend Needed)
+If you just want to review or develop the UI without running MongoDB or the backend server:
+```powershell
+cd apps\OpenSign
+npm run qa:local
+```
+- Automatically authenticates as `browser-qa@local.invalid` with an isolated mock session so you can explore all dashboards and signing screens immediately.
 
 ---
 
